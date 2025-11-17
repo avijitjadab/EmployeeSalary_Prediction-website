@@ -1,47 +1,43 @@
+# app.py
 import streamlit as st
-import pandas as pd
-import numpy as np
 import joblib
-from sklearn.preprocessing import StandardScaler
+import pandas as pd
 
-# Load the trained model
-model = joblib.load("salary_model.pkl")
+st.set_page_config(page_title="Employee Salary Predictor", layout="centered")
+st.title("💼 Employee Salary Predictor")
 
-# You can optionally load scalers if saved separately:
-# age_scaler = joblib.load("age_scaler.pkl")
-# exp_scaler = joblib.load("exp_scaler.pkl")
+# MODEL_PATH should match the filename in your repo (put model in repo root)
+MODEL_PATH = "salary_model_pipeline_colab.pkl"  # or "salary_model.pkl"
 
-# Hardcoded encodings (must match training)
-degree_map = {'Bachelors': 0, 'Masters': 1, 'PhD': 2}
-job_title_map = {'Data Scientist': 0, 'Software Engineer': 1, 'Manager': 2, 'HR': 3}
-gender_map = {'Male': 1, 'Female': 0}
+@st.cache_resource(show_spinner=False)
+def load_model(path):
+    return joblib.load(path)
 
-# Streamlit UI
-st.set_page_config(page_title="Salary Predictor", layout="centered")
-st.title("💼 Employee Salary Prediction App")
-st.markdown("Fill the employee's details to estimate their salary.")
+pipe = load_model(MODEL_PATH)
 
-# Input fields
+# UI inputs
 age = st.slider("Age", 18, 65, 30)
 gender = st.selectbox("Gender", ["Male", "Female"])
-degree = st.selectbox("Education Level", list(degree_map.keys()))
-job_title = st.selectbox("Job Title", list(job_title_map.keys()))
-experience = st.slider("Years of Experience", 0, 40, 5)
+education = st.selectbox("Education Level", sorted(["Bachelors", "Masters", "PhD"]))
+job_title = st.text_input("Job Title", "Software Engineer")
+experience = st.slider("Years of Experience", 0, 40, 3)
 
-# Button
 if st.button("Predict Salary"):
-    # Encode categorical features
-    gender_encoded = gender_map[gender]
-    degree_encoded = degree_map[degree]
-    job_title_encoded = job_title_map[job_title]
+    input_df = pd.DataFrame([{
+        "Age": age,
+        "Gender": gender,
+        "Education Level": education,
+        "Job Title": job_title,
+        "Years of Experience": experience
+    }])
+    # If you grouped rare jobs into "Other" during training, map unknowns:
+    # known_titles = [...]  # optional: replace with your top titles
+    # input_df["Job Title"] = input_df["Job Title"].apply(lambda t: t if t in known_titles else "Other")
 
-    # Standard scaling (fit fresh, or load saved scalers)
-    scaler = StandardScaler()
-    scaled_inputs = scaler.fit_transform([[age, experience]])
-    age_scaled, exp_scaled = scaled_inputs[0]
+    try:
+        pred = pipe.predict(input_df)[0]
+        st.success(f"💰 Predicted Salary: ₹ {pred:,.2f}")
+    except Exception as e:
+        st.error(f"Prediction error: {e}")
+        st.write("Possible causes: model filename mismatch, different feature names, unseen preprocessing step.")
 
-    # Final input for model
-    input_data = np.array([[age_scaled, gender_encoded, degree_encoded, job_title_encoded, exp_scaled]])
-    predicted_salary = model.predict(input_data)[0]
-
-    st.success(f"💰 Predicted Salary: ₹ {predicted_salary:,.2f}")
