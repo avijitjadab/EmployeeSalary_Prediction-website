@@ -1,7 +1,7 @@
+scikit-learn==1.6.1
+joblib
+cloudpickle
 streamlit
 pandas
 numpy
-scikit-learn
-joblib
-matplotlib
-seaborn
+gdown
