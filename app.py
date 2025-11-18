@@ -50,7 +50,7 @@ except Exception as e:
     st.text(traceback.format_exc())
     st.stop()
 
-st.success(f"Loaded model: {os.path.basename(MODEL_PATH)}")
+#st.success(f"Loaded model: {os.path.basename(MODEL_PATH)}")
 
 # ------------------ Basic UI inputs ------------------
 age = st.slider("Age", 18, 65, 30)
@@ -165,3 +165,4 @@ if st.button("Predict Salary"):
             "`Age`, `Gender`, `Education Level`, `Job Title`, `Years of Experience`.\n"
             "- If your model used different category names, re-export the pipeline or update this app."
         )
+
